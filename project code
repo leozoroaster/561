@@ -1,0 +1,146 @@
+import numpy as np 
+import math
+import random
+from numpy import zeros
+from numpy import ones
+
+#For simplicity, we only want to keep the distance between 2 nodes
+
+def BF(size,weights):
+    Dist=[0]+[float('inf')]*(size-1)
+    Path=[[0]]*size
+    for t in range(0,size):
+        pDist=np.copy(Dist)
+        pPath=np.copy(Path)
+        for i in range(0,size):
+            for j in range(0,size):
+                if Dist[i]+weights[i,j]<Dist[j]:
+                    Dist[j]=pDist[i]+weights[i,j]
+                    Path[j]=list(pPath[i])+[j]
+    minvalue=Dist[-1]
+    minpath=Path[-1]    
+    return minvalue,minpath
+
+def FC(size):
+    new=zeros((size,size))
+    for i in range(0,size):
+        for j in range(0,size):
+            if i==j:
+                new[i,j]=0
+            else:
+                new[i,j]=random.random()
+                new[j,i]=new[i,j]
+    return new
+
+def Hie(size,dis):    
+    new=zeros((size,size))
+    for i in range(0,size):
+        for j in range(0,size):
+            if i-j<-dis or i-j>dis:
+                new[i,j]=float('inf')
+            elif i==j:
+                new[i,j]=0
+            else:
+                new[i,j]=random.random()
+                new[j,i]=new[i,j]
+    return new
+
+def Sparse(size,dis):    
+    new=zeros((size,size))
+    for i in range(0,size):
+        for j in range(0,size):
+            if i-j<-dis or i-j>dis:
+                new[i,j]=float('inf')
+            elif i==j:
+                new[i,j]=0
+            else:
+                new[i,j]=1
+                new[j,i]=1
+    return new
+
+def Random(size,dis,pr,punish):    
+    new=zeros((size,size))
+    for i in range(0,size):
+        for j in range(0,size):
+            if i-j<-dis or i-j>dis:
+                new[i,j]=float('inf')
+            elif i==j:
+                new[i,j]=0
+            else:
+                a=random.uniform(0,1)
+                if a<pr:
+                    new[i,j]=random.random()+punish
+                    new[j,i]=new[i,j]
+                else:
+                    new[i,j]=random.random()
+                    new[j,i]=new[i,j]
+    return new
+
+def Slow(size,dis,init):
+    for i in range(0,size):
+        for j in range(0,size):
+            if i-j<-dis or i-j>dis:
+                init[i,j]=float('inf')
+            elif i==j:
+                init[i,j]=0
+            else:
+                init[i,j]+=random.uniform(0,0.1)
+                init[j,i]=init[i,j]
+    return init
+
+def get(weights,path,size):
+    value=0
+    if len(path)==2:
+        value=weights[0,size-1]
+    else:
+        for i in range(0,len(path)-1):
+            value+=weights[path[i]][path[i+1]]
+    return value
+
+def plus(A,B,size):
+    C=np.copy(A)
+    for i in range(0,size):
+        for j in range(0,size):
+            C[i,j]=A[i,j]+B[i,j]
+    return C
+
+def main():
+    pr=0
+    punish=5
+    a=[0,1]
+    size=102
+    dis=10
+    time=100
+    ftrl=0
+    unchange=0
+    bestfix=0
+    history=zeros((size,size))
+
+    weights=Random(size,dis,pr,punish)
+    junk,olpath=BF(size,weights)
+    junk,path=BF(size,weights)
+    olvalue=get(weights,olpath,size)
+    ftrl+=olvalue
+    value=get(weights,path,size)
+    unchange+=value
+    #weights=Sparse(size,dis)*time
+    for t in range(0,time):
+        history+=weights
+        junk,olpath=BF(size,history)
+        junk,path=BF(size,weights)
+            
+        weights=Random(size,dis,pr,punish)
+        #weights=Slow(size,dis,weights)
+
+        #print(olpath,path)
+        olvalue=get(weights,olpath,size)
+        ftrl+=olvalue
+        value=get(weights,path,size)
+        unchange+=value
+    history+=weights
+    bestfix,junk=BF(size,history)
+    print(ftrl-bestfix,unchange-bestfix)
+        
+            
+if __name__ == "__main__":
+    main()
